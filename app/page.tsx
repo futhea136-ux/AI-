@@ -46,7 +46,13 @@ export default function Home() {
   const [pendingText, setPendingText] = useState("");
   const [toast, setToast] = useState("");
   const [added, setAdded] = useState(false);
+  const [greeting, setGreeting] = useState("您好");
   const recognitionRef = useRef<{ start: () => void; stop: () => void } | null>(null);
+
+  useEffect(() => {
+    const hour = new Date().getHours();
+    setGreeting(hour < 11 ? "早上好" : hour < 18 ? "下午好" : "晚上好");
+  }, []);
 
   const calendarYear = currentMonth.getFullYear();
   const calendarMonth = currentMonth.getMonth() + 1;
@@ -398,7 +404,7 @@ export default function Home() {
             <div className="assistant-orb"><span /></div>
             <div>
               <p className="eyebrow">AI ASSISTANT</p>
-              <h1>下午好，林先生</h1>
+              <h1>{greeting}，有什么可以帮你？</h1>
               <p>今天有 3 项安排，1 项待确认。</p>
             </div>
           </div>
