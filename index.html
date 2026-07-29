@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#171b2e">
+  <title>AI 小秘 · 三版界面原型</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-theme="fusion">
+  <main class="page-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="AI 小秘首页">
+        <span class="brand-mark">秘</span>
+        <span>
+          <strong>AI 小秘</strong>
+          <small>会听、会记、会提醒</small>
+        </span>
+      </a>
+
+      <div class="product-mode">
+        <span class="mode-spark">✦</span>
+        <span><strong>智能日历</strong><small>专业效率 × AI 对话</small></span>
+      </div>
+
+      <button class="avatar" aria-label="个人中心">林</button>
+    </header>
+
+    <section class="workspace">
+      <aside class="assistant-panel">
+        <div class="assistant-heading">
+          <div class="assistant-orb"><span></span></div>
+          <div>
+            <p class="eyebrow">AI ASSISTANT</p>
+            <h1>下午好，林先生</h1>
+            <p>今天有 3 项安排，1 项待确认。</p>
+          </div>
+        </div>
+
+        <div class="conversation">
+          <div class="message assistant-message">
+            <span class="message-dot"></span>
+            <p>想安排什么？你可以直接告诉我。</p>
+          </div>
+          <div class="message user-message" id="transcriptMessage">
+            <p id="transcript">明天下午3点提醒我见王总</p>
+          </div>
+          <div class="event-confirmation" id="confirmationCard">
+            <div class="confirmation-top">
+              <span class="success-icon">✓</span>
+              <div>
+                <small>已为你整理</small>
+                <strong>见王总</strong>
+              </div>
+              <span class="status-chip tentative">待确认</span>
+            </div>
+            <dl>
+              <div><dt>时间</dt><dd>明天 15:00</dd></div>
+              <div><dt>提醒</dt><dd>提前 30 分钟</dd></div>
+              <div><dt>地点</dt><dd class="uncertain">待确认</dd></div>
+            </dl>
+            <div class="confirmation-actions">
+              <button class="text-button">修改</button>
+              <button class="primary-button" id="confirmEvent">确认添加</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="voice-box">
+          <div class="voice-status">
+            <span class="listening-dot"></span>
+            <span id="voiceStatus">点击麦克风开始说话</span>
+            <time id="voiceTimer">00:00</time>
+          </div>
+          <div class="waveform" aria-hidden="true">
+            <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+          </div>
+          <div class="voice-controls">
+            <button class="input-mode" id="textMode" aria-label="文字输入">⌨</button>
+            <button class="mic-button" id="micButton" aria-label="开始语音输入">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 15a3.5 3.5 0 0 0 3.5-3.5v-5a3.5 3.5 0 0 0-7 0v5A3.5 3.5 0 0 0 12 15Z"/>
+                <path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M9 21h6"/>
+              </svg>
+            </button>
+            <button class="input-mode" id="cancelVoice" aria-label="取消输入">×</button>
+          </div>
+          <form class="text-entry" id="textEntry">
+            <input id="scheduleInput" type="text" placeholder="例如：周五下午和王总见面，时间待定">
+            <button type="submit">发送</button>
+          </form>
+          <p class="voice-hint">试着说：“周五的会议改到下午四点”</p>
+        </div>
+      </aside>
+
+      <section class="calendar-panel">
+        <header class="calendar-header">
+          <div>
+            <p class="eyebrow">MY CALENDAR</p>
+            <h2>2026年 7月</h2>
+          </div>
+          <div class="calendar-tools">
+            <div class="view-tabs">
+              <button class="active">月</button>
+              <button>周</button>
+              <button>日程</button>
+            </div>
+            <button class="today-button">今天</button>
+            <button class="icon-button" aria-label="上个月">‹</button>
+            <button class="icon-button" aria-label="下个月">›</button>
+          </div>
+        </header>
+
+        <div class="weekdays" aria-hidden="true">
+          <span>周一</span><span>周二</span><span>周三</span><span>周四</span>
+          <span>周五</span><span>周六</span><span>周日</span>
+        </div>
+        <div class="calendar-grid" id="calendarGrid" aria-label="2026年7月日历"></div>
+
+        <div class="calendar-legend">
+          <span><i class="confirmed-key"></i>已确认</span>
+          <span><i class="tentative-key"></i>待确认</span>
+          <span><i class="completed-key">✓</i>已完成</span>
+        </div>
+      </section>
+
+      <aside class="detail-panel">
+        <header class="detail-header">
+          <div>
+            <p class="eyebrow">TODAY</p>
+            <h2>7月29日</h2>
+            <span>星期三 · 3项安排</span>
+          </div>
+          <button class="add-button" aria-label="新增日程">＋</button>
+        </header>
+
+        <div class="day-progress">
+          <div><span>今日进度</span><strong>1 / 3</strong></div>
+          <div class="progress-track"><span></span></div>
+        </div>
+
+        <ol class="agenda-list">
+          <li class="agenda-item completed">
+            <time>09:30</time>
+            <button class="completion-toggle checked" aria-label="恢复为未完成">✓</button>
+            <div>
+              <strong>项目例会</strong>
+              <span>会议室 B · 6人</span>
+              <em>已完成</em>
+            </div>
+            <button class="more-button" aria-label="更多操作">•••</button>
+          </li>
+          <li class="agenda-item confirmed">
+            <time>15:00</time>
+            <button class="completion-toggle" aria-label="标记为已完成"></button>
+            <div>
+              <strong>客户沟通</strong>
+              <span>腾讯会议 · 提前15分钟提醒</span>
+              <em>已确认</em>
+            </div>
+            <button class="more-button" aria-label="更多操作">•••</button>
+          </li>
+          <li class="agenda-item tentative">
+            <time>待定</time>
+            <button class="completion-toggle" aria-label="标记为已完成"></button>
+            <div>
+              <strong>产品方案讨论</strong>
+              <span>时间和地点尚未确定</span>
+              <em>待确认</em>
+            </div>
+            <button class="more-button" aria-label="更多操作">•••</button>
+          </li>
+        </ol>
+
+        <div class="focus-card">
+          <span class="focus-icon">✦</span>
+          <div>
+            <small>小秘建议</small>
+            <p>下午两场安排间隔充足，无时间冲突。</p>
+          </div>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status">日程已添加到明天下午</div>
+  <script src="app.js"></script>
+</body>
+</html>
