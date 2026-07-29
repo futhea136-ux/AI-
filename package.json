@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "test": "node --experimental-strip-types --test app/reminders.test.ts",
+    "test": "node --experimental-strip-types --test app/*.test.ts",
     "build": "next build && node scripts/prepare-dist.mjs",
     "start": "next start",
     "lint": "next lint",

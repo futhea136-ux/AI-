@@ -1,4 +1,5 @@
-import { AgendaStatus, RepeatRule, localDateKey } from "./schedule";
+import { localDateKey } from "./schedule.ts";
+import type { AgendaStatus, RepeatRule } from "./schedule.ts";
 
 export type AssistantAction = "create" | "update" | "delete" | "complete" | "query";
 
@@ -13,6 +14,7 @@ export type ParsedCommand = {
   reminder: string;
   uncertainFields: string[];
   missingFields: string[];
+  assumedDate?: "today";
 };
 
 const weekdayMap: Record<string, number> = {
@@ -133,15 +135,28 @@ function extractTitle(text: string) {
 
 export function parseCommand(text: string, reference = new Date()): ParsedCommand {
   const action = parseAction(text);
-  const date = parseDate(text, reference);
+  const explicitDate = parseDate(text, reference);
   const parsedTime = parseTime(text);
+  const today = localDateKey(reference.getFullYear(), reference.getMonth() + 1, reference.getDate());
+  const [parsedHour, parsedMinute] = parsedTime && parsedTime !== "待定"
+    ? parsedTime.split(":").map(Number)
+    : [Number.NaN, Number.NaN];
+  const isFutureToday = Number.isFinite(parsedHour) &&
+    (parsedHour > reference.getHours() ||
+      (parsedHour === reference.getHours() && parsedMinute >= reference.getMinutes()));
+  const assumedDate = action === "create" && !explicitDate && isFutureToday ? "today" : undefined;
+  const date = explicitDate || (assumedDate ? today : undefined);
   const uncertain = /可能|暂定|待定|没确定|不确定|还不确定/.test(text);
   const time = parsedTime || (action === "create" && uncertain ? "待定" : undefined);
   const uncertainFields: string[] = [];
   if (/地点.{0,5}(待定|没确定|不确定)/.test(text)) uncertainFields.push("地点");
   if (time === "待定") uncertainFields.push("时间");
 
-  const title = extractTitle(text);
+  const title = extractTitle(text)
+    .replace(/^(?:我要|我想|想要|要)?(?:添加|建立|设定)?/, "")
+    .replace(/^(?:一个|一项|要)/, "")
+    .replace(/(?:的)?(?:任务|事项)$/, "")
+    .trim();
   const missingFields: string[] = [];
   if (action === "create") {
     if (!title) missingFields.push("事项");
@@ -159,7 +174,8 @@ export function parseCommand(text: string, reference = new Date()): ParsedComman
     repeat: parseRepeat(text),
     reminder: parseReminder(text),
     uncertainFields,
-    missingFields
+    missingFields,
+    assumedDate
   };
 }
 
@@ -167,6 +183,7 @@ export function followUpQuestion(command: ParsedCommand) {
   if (!command.missingFields.length) return "";
   const missing = command.missingFields[0];
   if (missing === "事项") return "这项安排的名称是什么？";
+  if (missing === "日期" && command.time) return "这个时间今天已经过了，是安排在明天吗？";
   if (missing === "日期") return "安排在哪一天？";
   return "安排在几点？如果还没确定，也可以说“时间待定”。";
 }

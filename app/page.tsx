@@ -48,6 +48,10 @@ export default function Home() {
   const [added, setAdded] = useState(false);
   const [greeting, setGreeting] = useState("您好");
   const recognitionRef = useRef<{ start: () => void; stop: () => void } | null>(null);
+  const listeningRef = useRef(false);
+  const voiceFinalTextRef = useRef("");
+  const voiceInterimTextRef = useRef("");
+  const finishVoiceOnEndRef = useRef(false);
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -144,7 +148,7 @@ export default function Home() {
   function handleAssistantInput(text: string) {
     setAdded(false);
     const combined = pendingText ? `${pendingText} ${text}` : text;
-    const parsed = parseCommand(combined, assistantReferenceDate);
+    const parsed = parseCommand(combined, new Date());
     const question = followUpQuestion(parsed);
     setTranscript(text);
     setCommand(parsed);
@@ -336,6 +340,8 @@ export default function Home() {
 
   function toggleListening() {
     if (listening) {
+      listeningRef.current = false;
+      finishVoiceOnEndRef.current = true;
       recognitionRef.current?.stop();
       setListening(false);
       return;
@@ -354,25 +360,61 @@ export default function Home() {
     const recognition = new SpeechRecognitionClass();
     recognition.lang = "zh-CN";
     recognition.interimResults = true;
-    recognition.continuous = false;
+    recognition.continuous = true;
     recognition.onresult = (event: any) => {
-      const result = Array.from(event.results as ArrayLike<any>)
-        .map((item: any) => item[0].transcript)
-        .join("");
-      if (result) {
-        setTranscript(result);
-        const lastResult = event.results[event.results.length - 1];
-        if (lastResult?.isFinal) handleAssistantInput(result);
+      let interim = "";
+      for (let index = event.resultIndex; index < event.results.length; index += 1) {
+        const result = event.results[index];
+        const text = result[0]?.transcript || "";
+        if (result.isFinal) voiceFinalTextRef.current += text;
+        else interim += text;
       }
+      voiceInterimTextRef.current = interim;
+      const fullText = `${voiceFinalTextRef.current}${interim}`.trim();
+      if (fullText) setTranscript(fullText);
     };
-    recognition.onerror = () => {
+    recognition.onerror = (event: any) => {
+      if (event.error === "no-speech" && listeningRef.current) return;
+      listeningRef.current = false;
       setListening(false);
       showToast("没有听清，请再试一次");
     };
-    recognition.onend = () => setListening(false);
+    recognition.onend = () => {
+      if (finishVoiceOnEndRef.current) {
+        finishVoiceOnEndRef.current = false;
+        const text = `${voiceFinalTextRef.current}${voiceInterimTextRef.current}`.trim();
+        if (text) handleAssistantInput(text);
+        return;
+      }
+      if (listeningRef.current) {
+        window.setTimeout(() => {
+          try {
+            recognition.start();
+          } catch {
+            listeningRef.current = false;
+            setListening(false);
+          }
+        }, 150);
+        return;
+      }
+      setListening(false);
+    };
     recognitionRef.current = recognition;
+    voiceFinalTextRef.current = "";
+    voiceInterimTextRef.current = "";
+    finishVoiceOnEndRef.current = false;
+    listeningRef.current = true;
     setListening(true);
     recognition.start();
+  }
+
+  function cancelListening() {
+    listeningRef.current = false;
+    finishVoiceOnEndRef.current = false;
+    voiceFinalTextRef.current = "";
+    voiceInterimTextRef.current = "";
+    recognitionRef.current?.stop();
+    setListening(false);
   }
 
   function submitText(event: FormEvent<HTMLFormElement>) {
@@ -456,7 +498,7 @@ export default function Home() {
           <div className="voice-box">
             <div className="voice-status">
               <span className="listening-dot" />
-              <span>{listening ? "正在听，请说话…" : "点击麦克风开始说话"}</span>
+              <span>{listening ? "正在听，停顿后可继续；再点麦克风完成" : "点击麦克风开始说话"}</span>
               <time>00:00</time>
             </div>
             <div className="waveform" aria-hidden="true">
@@ -464,13 +506,13 @@ export default function Home() {
             </div>
             <div className="voice-controls">
               <button className="input-mode" onClick={() => setTextVisible((value) => !value)} aria-label="文字输入">⌨</button>
-              <button className="mic-button" onClick={toggleListening} aria-label="开始语音输入">
+              <button className="mic-button" onClick={toggleListening} aria-label={listening ? "完成语音输入" : "开始语音输入"}>
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M12 15a3.5 3.5 0 0 0 3.5-3.5v-5a3.5 3.5 0 0 0-7 0v5A3.5 3.5 0 0 0 12 15Z"/>
                   <path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M9 21h6"/>
                 </svg>
               </button>
-              <button className="input-mode" onClick={() => setListening(false)} aria-label="取消输入">×</button>
+              <button className="input-mode" onClick={cancelListening} aria-label="取消输入">×</button>
             </div>
             <form className={`text-entry${textVisible ? " visible" : ""}`} onSubmit={submitText}>
               <input name="schedule" type="text" placeholder="例如：周五下午和王总见面，时间待定" />
