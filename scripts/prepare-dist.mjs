@@ -1,4 +1,4 @@
-import { cp, rm } from "node:fs/promises";
+import { cp, mkdir, rm } from "node:fs/promises";
 import { existsSync } from "node:fs";
 
 if (!existsSync("out")) {
@@ -10,3 +10,7 @@ if (existsSync("dist")) {
 }
 
 await cp("out", "dist", { recursive: true });
+await mkdir("dist/server", { recursive: true });
+await mkdir("dist/.openai", { recursive: true });
+await cp("sites/server/index.js", "dist/server/index.js");
+await cp(".openai/hosting.json", "dist/.openai/hosting.json");
