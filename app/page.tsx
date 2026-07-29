@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import EventDialog from "./EventDialog";
 import BackupDialog from "./BackupDialog";
 import ReminderPanel from "./ReminderPanel";
-import { DueReminder, dueReminders } from "./reminders";
+import { DueReminder, dueReminders, reminderText } from "./reminders";
 import { followUpQuestion, parseCommand, ParsedCommand } from "./assistant";
 import {
   AgendaItem,
@@ -239,7 +239,7 @@ export default function Home() {
         title: item.title,
         status: command.status,
         repeat: command.repeat !== "none" ? command.repeat : item.repeat,
-        reminder: command.reminder !== "none" ? command.reminder : item.reminder
+        reminder: command.reminderSpecified ? command.reminder : item.reminder
       };
     }));
     setAssistantReply(command.action === "complete" ? "已标记完成，日程仍会保留。" : "日程已经修改。");
@@ -492,7 +492,7 @@ export default function Home() {
                 </div>
                 <div><dt>时间</dt><dd className={command.time === "待定" ? "uncertain" : ""}>{command.time || "保持原时间"}</dd></div>
                 <div><dt>重复</dt><dd>{repeatLabel[command.repeat]}</dd></div>
-                <div><dt>提醒</dt><dd>{command.reminder === "none" ? "不提醒" : command.reminder}</dd></div>
+                <div><dt>提醒</dt><dd>{reminderText(command.reminder)}</dd></div>
               </dl>
               <div className="confirmation-actions">
                 <button className="text-button" onClick={() => setTextVisible(true)}>修改</button>

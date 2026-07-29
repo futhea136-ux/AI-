@@ -12,6 +12,7 @@ export type ParsedCommand = {
   status: AgendaStatus;
   repeat: RepeatRule;
   reminder: string;
+  reminderSpecified: boolean;
   uncertainFields: string[];
   missingFields: string[];
   assumedDate?: "today";
@@ -92,13 +93,19 @@ function parseTime(text: string) {
   return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
 }
 
-function parseReminder(text: string) {
-  const reminder = text.match(/提前\s*(\d+)\s*(分钟|小时|天)/);
-  if (!reminder) return /提醒我|提醒一下/.test(text) ? "start" : "none";
-  const amount = Number(reminder[1]);
-  if (reminder[2] === "分钟") return `${amount}m`;
-  if (reminder[2] === "小时") return `${amount}h`;
-  return `${amount}d`;
+function parseReminder(text: string, action: AssistantAction) {
+  if (/不提醒|不用提醒|无需提醒|取消提醒/.test(text)) {
+    return { value: "none", specified: true };
+  }
+  const reminder = text.match(/提前\s*([0-9一二两三四五六七八九十]+)\s*(分钟|小时|天)/);
+  if (!reminder) {
+    if (/提醒我|提醒一下/.test(text)) return { value: "start", specified: true };
+    return { value: action === "create" ? "start" : "none", specified: false };
+  }
+  const amount = chineseNumber(reminder[1]);
+  if (reminder[2] === "分钟") return { value: `${amount}m`, specified: true };
+  if (reminder[2] === "小时") return { value: `${amount}h`, specified: true };
+  return { value: `${amount}d`, specified: true };
 }
 
 function parseRepeat(text: string): RepeatRule {
@@ -122,7 +129,7 @@ function extractTitle(text: string) {
     .replace(/(今天|明天|后天|下周|本周|这周|星期|周)[一二三四五六日天]?/g, "")
     .replace(/(?:\d{4}年)?\d{1,2}月\d{1,2}[日号]?/g, "")
     .replace(/(凌晨|早上|上午|中午|下午|傍晚|晚上)?\s*[0-9一二两三四五六七八九十]{1,3}(?:点(?:半|[0-9一二两三四五六七八九十]{1,3}分?)?|[:：]\d{2})/g, "")
-    .replace(/提前\s*\d+\s*(分钟|小时|天)/g, "")
+    .replace(/提前\s*[0-9一二两三四五六七八九十]+\s*(分钟|小时|天)/g, "")
     .replace(/每个?工作日|周一到周五|每天|每日|每周|每星期|每月/g, "")
     .replace(/请|帮我|提醒我|提醒一下|创建|新增|安排|日程|修改|删除|取消|把|改到|改成|挪到|推迟|完成了|已完成|做完了|结束了/g, "")
     .replace(/^我/, "")
@@ -135,6 +142,7 @@ function extractTitle(text: string) {
 
 export function parseCommand(text: string, reference = new Date()): ParsedCommand {
   const action = parseAction(text);
+  const parsedReminder = parseReminder(text, action);
   const explicitDate = parseDate(text, reference);
   const parsedTime = parseTime(text);
   const today = localDateKey(reference.getFullYear(), reference.getMonth() + 1, reference.getDate());
@@ -172,7 +180,8 @@ export function parseCommand(text: string, reference = new Date()): ParsedComman
     time,
     status: uncertain ? "tentative" : "confirmed",
     repeat: parseRepeat(text),
-    reminder: parseReminder(text),
+    reminder: parsedReminder.value,
+    reminderSpecified: parsedReminder.specified,
     uncertainFields,
     missingFields,
     assumedDate
