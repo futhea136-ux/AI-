@@ -5,8 +5,8 @@ const isGitHubPages = process.env.GITHUB_ACTIONS === "true";
 const nextConfig: NextConfig = {
   output: "export",
   trailingSlash: true,
-  basePath: isGitHubPages ? "/ai-secretary" : "",
-  assetPrefix: isGitHubPages ? "/ai-secretary/" : undefined
+  basePath: isGitHubPages ? "/AI-" : "",
+  assetPrefix: isGitHubPages ? "/AI-/" : undefined
 };
 
 export default nextConfig;
