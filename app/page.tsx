@@ -39,6 +39,7 @@ export default function Home() {
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | "unsupported">("unsupported");
   const [hydrated, setHydrated] = useState(false);
   const [listening, setListening] = useState(false);
+  const [voiceProcessing, setVoiceProcessing] = useState(false);
   const [textVisible, setTextVisible] = useState(false);
   const [transcript, setTranscript] = useState("明天下午3点提醒我见王总");
   const [command, setCommand] = useState<ParsedCommand>(() => parseCommand("明天下午3点提醒我见王总", assistantReferenceDate));
@@ -52,6 +53,8 @@ export default function Home() {
   const voiceFinalTextRef = useRef("");
   const voiceInterimTextRef = useRef("");
   const finishVoiceOnEndRef = useRef(false);
+  const voiceSubmittedRef = useRef(false);
+  const voiceFallbackTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -342,6 +345,8 @@ export default function Home() {
     if (listening) {
       listeningRef.current = false;
       finishVoiceOnEndRef.current = true;
+      setVoiceProcessing(true);
+      voiceFallbackTimerRef.current = window.setTimeout(submitCapturedVoice, 1200);
       recognitionRef.current?.stop();
       setListening(false);
       return;
@@ -377,13 +382,13 @@ export default function Home() {
       if (event.error === "no-speech" && listeningRef.current) return;
       listeningRef.current = false;
       setListening(false);
+      setVoiceProcessing(false);
       showToast("没有听清，请再试一次");
     };
     recognition.onend = () => {
       if (finishVoiceOnEndRef.current) {
         finishVoiceOnEndRef.current = false;
-        const text = `${voiceFinalTextRef.current}${voiceInterimTextRef.current}`.trim();
-        if (text) handleAssistantInput(text);
+        submitCapturedVoice();
         return;
       }
       if (listeningRef.current) {
@@ -403,18 +408,47 @@ export default function Home() {
     voiceFinalTextRef.current = "";
     voiceInterimTextRef.current = "";
     finishVoiceOnEndRef.current = false;
+    voiceSubmittedRef.current = false;
+    if (voiceFallbackTimerRef.current !== null) {
+      window.clearTimeout(voiceFallbackTimerRef.current);
+      voiceFallbackTimerRef.current = null;
+    }
+    setVoiceProcessing(false);
     listeningRef.current = true;
     setListening(true);
     recognition.start();
   }
 
+  function submitCapturedVoice() {
+    if (voiceSubmittedRef.current) return;
+    const text = `${voiceFinalTextRef.current}${voiceInterimTextRef.current}`.trim();
+    if (!text) {
+      setVoiceProcessing(false);
+      showToast("没有听到有效内容，请再试一次");
+      return;
+    }
+    voiceSubmittedRef.current = true;
+    if (voiceFallbackTimerRef.current !== null) {
+      window.clearTimeout(voiceFallbackTimerRef.current);
+      voiceFallbackTimerRef.current = null;
+    }
+    handleAssistantInput(text);
+    setVoiceProcessing(false);
+  }
+
   function cancelListening() {
     listeningRef.current = false;
     finishVoiceOnEndRef.current = false;
+    voiceSubmittedRef.current = true;
     voiceFinalTextRef.current = "";
     voiceInterimTextRef.current = "";
+    if (voiceFallbackTimerRef.current !== null) {
+      window.clearTimeout(voiceFallbackTimerRef.current);
+      voiceFallbackTimerRef.current = null;
+    }
     recognitionRef.current?.stop();
     setListening(false);
+    setVoiceProcessing(false);
   }
 
   function submitText(event: FormEvent<HTMLFormElement>) {
@@ -465,7 +499,7 @@ export default function Home() {
               <span className="message-dot" /><p>{assistantReply}</p>
             </div>
             <div className="message user-message"><p>{transcript}</p></div>
-            {command.missingFields.length > 0 && (
+            {!listening && !voiceProcessing && command.missingFields.length > 0 && (
               <div className="command-missing-note" role="status">
                 <strong>还不能确认</strong>
                 <p>
@@ -475,7 +509,7 @@ export default function Home() {
                 </p>
               </div>
             )}
-            {command.action !== "query" && command.missingFields.length === 0 && (
+            {!listening && !voiceProcessing && command.action !== "query" && command.missingFields.length === 0 && (
             <div className="event-confirmation">
               <div className="confirmation-top">
                 <span className="success-icon">✓</span>
@@ -511,7 +545,7 @@ export default function Home() {
           <div className="voice-box">
             <div className="voice-status">
               <span className="listening-dot" />
-              <span>{listening ? "正在听，停顿后可继续；再点麦克风完成" : "点击麦克风开始说话"}</span>
+              <span>{voiceProcessing ? "正在整理语音…" : listening ? "正在听，停顿后可继续；再点麦克风完成" : "点击麦克风开始说话"}</span>
               <time>00:00</time>
             </div>
             <div className="waveform" aria-hidden="true">
@@ -519,7 +553,7 @@ export default function Home() {
             </div>
             <div className="voice-controls">
               <button className="input-mode" onClick={() => setTextVisible((value) => !value)} aria-label="文字输入">⌨</button>
-              <button className="mic-button" onClick={toggleListening} aria-label={listening ? "完成语音输入" : "开始语音输入"}>
+              <button className="mic-button" onClick={toggleListening} disabled={voiceProcessing} aria-label={listening ? "完成语音输入" : "开始语音输入"}>
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M12 15a3.5 3.5 0 0 0 3.5-3.5v-5a3.5 3.5 0 0 0-7 0v5A3.5 3.5 0 0 0 12 15Z"/>
                   <path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M9 21h6"/>
