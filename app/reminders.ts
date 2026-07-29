@@ -1,4 +1,4 @@
-import { AgendaItem } from "./schedule";
+import type { AgendaItem } from "./schedule";
 
 export type DueReminder = {
   key: string;
@@ -42,14 +42,16 @@ export function dueReminders(
   events: AgendaItem[],
   now = new Date(),
   delivered = new Set<string>(),
-  toleranceMs = 60_000
+  startGraceMs = 10 * 60_000
 ) {
   return events
     .map(reminderForEvent)
     .filter((reminder): reminder is DueReminder => {
       if (!reminder || delivered.has(reminder.key)) return false;
       const elapsed = now.getTime() - reminder.reminderAt.getTime();
-      return elapsed >= 0 && elapsed <= toleranceMs;
+      const expiresAt = reminder.eventAt.getTime() +
+        (reminder.event.reminder === "start" ? startGraceMs : 0);
+      return elapsed >= 0 && now.getTime() <= expiresAt;
     });
 }
 

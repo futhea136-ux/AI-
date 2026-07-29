@@ -108,7 +108,7 @@ export default function Home() {
     if (!hydrated) return;
     const check = () => {
       const delivered = new Set<string>(JSON.parse(window.localStorage.getItem("ai-secretary-delivered-reminders") || "[]"));
-      const [nextReminder] = dueReminders(visibleEvents, new Date(), delivered, 90_000);
+      const [nextReminder] = dueReminders(visibleEvents, new Date(), delivered);
       if (!nextReminder) return;
 
       delivered.add(nextReminder.key);
@@ -124,7 +124,16 @@ export default function Home() {
     };
     check();
     const timer = window.setInterval(check, 15_000);
-    return () => window.clearInterval(timer);
+    const checkWhenVisible = () => {
+      if (document.visibilityState === "visible") check();
+    };
+    window.addEventListener("focus", check);
+    document.addEventListener("visibilitychange", checkWhenVisible);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", check);
+      document.removeEventListener("visibilitychange", checkWhenVisible);
+    };
   }, [hydrated, visibleEvents]);
 
   function showToast(message: string) {
