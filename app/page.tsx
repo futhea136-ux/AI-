@@ -465,6 +465,16 @@ export default function Home() {
               <span className="message-dot" /><p>{assistantReply}</p>
             </div>
             <div className="message user-message"><p>{transcript}</p></div>
+            {command.missingFields.length > 0 && (
+              <div className="command-missing-note" role="status">
+                <strong>还不能确认</strong>
+                <p>
+                  已识别：{command.title || "未识别事项"}
+                  {command.time ? `，${command.time}` : ""}
+                  ；还需要：{command.missingFields.join("、")}
+                </p>
+              </div>
+            )}
             {command.action !== "query" && command.missingFields.length === 0 && (
             <div className="event-confirmation">
               <div className="confirmation-top">
@@ -476,7 +486,10 @@ export default function Home() {
                 <span className={`status-chip ${command.status}`}>{statusLabel[command.status]}</span>
               </div>
               <dl>
-                <div><dt>日期</dt><dd>{command.date ? formatDateTitle(command.date) : "按当前日历"}</dd></div>
+                <div>
+                  <dt>日期</dt>
+                  <dd>{command.date ? formatDateTitle(command.date) : "按当前日历"}{command.assumedDate === "today" ? "（默认今天）" : ""}</dd>
+                </div>
                 <div><dt>时间</dt><dd className={command.time === "待定" ? "uncertain" : ""}>{command.time || "保持原时间"}</dd></div>
                 <div><dt>重复</dt><dd>{repeatLabel[command.repeat]}</dd></div>
                 <div><dt>提醒</dt><dd>{command.reminder === "none" ? "不提醒" : command.reminder}</dd></div>

@@ -549,3 +549,21 @@ body[data-theme="fusion"] .toast { background: linear-gradient(135deg, #6655dd, 
   .calendar-panel { padding-inline: 8px; }
   .day-cell { min-height: 61px; }
 }
+.command-missing-note {
+  padding: 14px 16px;
+  border: 1px dashed rgba(255, 196, 102, 0.72);
+  border-radius: 16px;
+  background: rgba(255, 196, 102, 0.1);
+  color: #fff3d6;
+}
+
+.command-missing-note strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.command-missing-note p {
+  margin: 0;
+  color: #c8d0ec;
+  line-height: 1.55;
+}
