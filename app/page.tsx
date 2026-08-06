@@ -33,6 +33,7 @@ export default function Home() {
   const [hydrated, setHydrated] = useState(false);
   const [listening, setListening] = useState(false);
   const [voiceProcessing, setVoiceProcessing] = useState(false);
+  const [installPrompt, setInstallPrompt] = useState<any>(null);
   const [textVisible, setTextVisible] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [command, setCommand] = useState<ParsedCommand>(() => parseCommand("", new Date(2026, 6, 29)));
@@ -60,6 +61,22 @@ export default function Home() {
     const basePath = window.location.pathname.startsWith("/AI-/") ? "/AI-" : "";
     navigator.serviceWorker.register(`${basePath}/sw.js`).catch(() => undefined);
   }, [hydrated]);
+
+  useEffect(() => {
+    const handleInstallPrompt = (event: Event) => {
+      event.preventDefault();
+      setInstallPrompt(event);
+    };
+    window.addEventListener("beforeinstallprompt", handleInstallPrompt);
+    window.addEventListener("appinstalled", () => setInstallPrompt(null), { once: true });
+    return () => window.removeEventListener("beforeinstallprompt", handleInstallPrompt);
+  }, []);
+
+  async function installApp() {
+    if (!installPrompt) return;
+    await installPrompt.prompt();
+    setInstallPrompt(null);
+  }
 
   const calendarYear = currentMonth.getFullYear();
   const calendarMonth = currentMonth.getMonth() + 1;
@@ -491,6 +508,7 @@ export default function Home() {
             {notificationPermission !== "granted" && <i />}
           </button>
           <button className="backup-button" onClick={() => setBackupOpen(true)}>备份</button>
+          {installPrompt && <button className="backup-button" onClick={installApp}>安装</button>}
           <button className="avatar" aria-label="本地用户">本地</button>
         </div>
       </header>
