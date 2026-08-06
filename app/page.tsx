@@ -4,7 +4,8 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import EventDialog from "./EventDialog";
 import BackupDialog from "./BackupDialog";
 import ReminderPanel from "./ReminderPanel";
-import { cleanupActivityLogs, writeActivityLog } from "./activityLog";
+import LogDialog from "./LogDialog";
+import { ActivityLogEntry, cleanupActivityLogs, writeActivityLog } from "./activityLog";
 import { DueReminder, dueReminders, reminderText } from "./reminders";
 import { followUpQuestion, parseCommand, ParsedCommand } from "./assistant";
 import {
@@ -44,6 +45,8 @@ export default function Home() {
   const [installHelpOpen, setInstallHelpOpen] = useState(false);
   const [updateReady, setUpdateReady] = useState(false);
   const [localHelpOpen, setLocalHelpOpen] = useState(false);
+  const [logOpen, setLogOpen] = useState(false);
+  const [activityLogs, setActivityLogs] = useState<ActivityLogEntry[]>([]);
   const [online, setOnline] = useState(true);
   const [textVisible, setTextVisible] = useState(false);
   const [transcript, setTranscript] = useState("");
@@ -189,7 +192,7 @@ export default function Home() {
         window.localStorage.removeItem("ai-secretary-events");
       }
     }
-    cleanupActivityLogs(window.localStorage);
+    setActivityLogs(cleanupActivityLogs(window.localStorage));
     const current = new Date();
     const currentKey = localDateKey(current.getFullYear(), current.getMonth() + 1, current.getDate());
     setSelectedDate(currentKey);
@@ -242,7 +245,13 @@ export default function Home() {
   }
 
   function logActivity(action: string, title: string) {
-    writeActivityLog(window.localStorage, action, title);
+    setActivityLogs(writeActivityLog(window.localStorage, action, title));
+  }
+
+  function openActivityLogs() {
+    setActivityLogs(cleanupActivityLogs(window.localStorage));
+    setLogOpen(true);
+    setLocalHelpOpen(false);
   }
 
   function handleAssistantInput(text: string) {
@@ -876,8 +885,17 @@ export default function Home() {
             <p>操作日志也只保存在本机，并会自动清理 7 天前的记录。</p>
             <p>{online ? "当前网络正常；断网后已缓存页面仍可打开。" : "当前离线；可以查看和编辑本地日程，语音识别可能受浏览器限制。"}</p>
           </div>
-          <button onClick={() => setLocalHelpOpen(false)}>知道了</button>
+          <div className="install-help-actions">
+            <button onClick={openActivityLogs}>查看日志</button>
+            <button onClick={() => setLocalHelpOpen(false)}>知道了</button>
+          </div>
         </section>
+      )}
+      {logOpen && (
+        <LogDialog
+          logs={activityLogs}
+          onClose={() => setLogOpen(false)}
+        />
       )}
       {activeReminder && (
         <section className="reminder-alert" role="alertdialog" aria-modal="true">

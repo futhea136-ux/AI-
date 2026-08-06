@@ -330,6 +330,24 @@ body.listening .waveform i:nth-child(3n) { animation-delay: -.55s; }
   margin: 0 0 16px; padding: 12px 14px; border-radius: 11px;
   color: #7d622c; background: #fff7e7; font-size: 10px; line-height: 1.65;
 }
+.log-dialog { width: min(560px, 100%); }
+.log-list {
+  display: grid; gap: 8px; max-height: min(420px, 58vh); overflow: auto;
+  margin: 0; padding: 0; list-style: none;
+}
+.log-list li {
+  display: grid; grid-template-columns: 92px 1fr; gap: 12px; align-items: center;
+  padding: 12px; border: 1px solid var(--line); border-radius: 12px;
+  background: color-mix(in srgb, var(--primary-soft) 35%, transparent);
+}
+.log-list time { color: var(--primary-strong); font-size: 10px; font-variant-numeric: tabular-nums; }
+.log-list strong, .log-list small { display: block; }
+.log-list strong { font-size: 11px; }
+.log-list small { margin-top: 2px; color: var(--muted); font-size: 9px; }
+.log-list .empty-log {
+  display: block; padding: 42px 16px; border-style: dashed;
+  color: var(--muted); text-align: center; font-size: 10px;
+}
 .backup-actions { display: grid; gap: 10px; }
 .backup-actions > button {
   display: flex; align-items: center; gap: 12px; width: 100%; padding: 14px;
@@ -410,6 +428,7 @@ body.listening .waveform i:nth-child(3n) { animation-delay: -.55s; }
   padding: 8px 11px; border: 0; border-radius: 9px;
   color: white; background: var(--primary); cursor: pointer; font-size: 10px;
 }
+.install-help-actions { display: grid; gap: 8px; }
 .search-panel {
   position: fixed; top: 92px; right: 28px; z-index: 34; width: min(460px, calc(100vw - 28px));
   display: grid; gap: 12px; padding: 16px; border: 1px solid var(--line); border-radius: 16px;
