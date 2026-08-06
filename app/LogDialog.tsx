@@ -5,6 +5,7 @@ import { ActivityLogEntry } from "./activityLog";
 type LogDialogProps = {
   logs: ActivityLogEntry[];
   onClose: () => void;
+  onClear: () => void;
 };
 
 function formatLogTime(value: string) {
@@ -18,7 +19,7 @@ function formatLogTime(value: string) {
   });
 }
 
-export default function LogDialog({ logs, onClose }: LogDialogProps) {
+export default function LogDialog({ logs, onClose, onClear }: LogDialogProps) {
   return (
     <div className="dialog-backdrop" role="presentation" onMouseDown={onClose}>
       <section className="event-dialog log-dialog" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
@@ -27,6 +28,10 @@ export default function LogDialog({ logs, onClose }: LogDialogProps) {
           <button type="button" className="dialog-close" onClick={onClose} aria-label="关闭">×</button>
         </header>
         <p className="backup-notice">日志只保存在当前浏览器，并自动清理 7 天前的记录。</p>
+        <div className="log-toolbar">
+          <span>共 {logs.length} 条</span>
+          <button type="button" onClick={onClear} disabled={logs.length === 0}>清空日志</button>
+        </div>
         <ol className="log-list">
           {logs.length === 0 && <li className="empty-log">最近 7 天还没有操作记录</li>}
           {logs.map((log) => (

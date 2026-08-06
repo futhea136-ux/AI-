@@ -40,6 +40,11 @@ export function cleanupActivityLogs(storage: LogStorage, now = new Date()) {
   return entries;
 }
 
+export function clearActivityLogs(storage: LogStorage) {
+  storage.setItem(ACTIVITY_LOG_KEY, JSON.stringify([]));
+  return [];
+}
+
 export function writeActivityLog(
   storage: LogStorage,
   action: string,

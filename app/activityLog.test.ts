@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   ACTIVITY_LOG_KEY,
+  clearActivityLogs,
   cleanupActivityLogs,
   pruneActivityLogs,
   writeActivityLog
@@ -55,4 +56,17 @@ test("页面启动清理会移除7天前日志", () => {
   const entries = cleanupActivityLogs(storage, new Date("2026-08-06T12:00:00.000Z"));
 
   assert.deepEqual(entries.map((entry) => entry.id), ["keep"]);
+});
+
+test("可以手动清空本地日志", () => {
+  const storage = memoryStorage({
+    [ACTIVITY_LOG_KEY]: JSON.stringify([
+      { id: "keep", action: "create", title: "烧水", createdAt: "2026-08-06T12:00:00.000Z" }
+    ])
+  });
+
+  const entries = clearActivityLogs(storage);
+
+  assert.deepEqual(entries, []);
+  assert.equal(storage.dump()[ACTIVITY_LOG_KEY], "[]");
 });

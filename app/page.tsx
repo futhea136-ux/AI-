@@ -5,7 +5,7 @@ import EventDialog from "./EventDialog";
 import BackupDialog from "./BackupDialog";
 import ReminderPanel from "./ReminderPanel";
 import LogDialog from "./LogDialog";
-import { ActivityLogEntry, cleanupActivityLogs, writeActivityLog } from "./activityLog";
+import { ActivityLogEntry, cleanupActivityLogs, clearActivityLogs, writeActivityLog } from "./activityLog";
 import { DueReminder, dueReminders, reminderText } from "./reminders";
 import { followUpQuestion, parseCommand, ParsedCommand } from "./assistant";
 import {
@@ -252,6 +252,12 @@ export default function Home() {
     setActivityLogs(cleanupActivityLogs(window.localStorage));
     setLogOpen(true);
     setLocalHelpOpen(false);
+  }
+
+  function clearLogs() {
+    if (!window.confirm("确定清空最近 7 天的本地操作日志吗？日程不会被删除。")) return;
+    setActivityLogs(clearActivityLogs(window.localStorage));
+    showToast("操作日志已清空");
   }
 
   function handleAssistantInput(text: string) {
@@ -895,6 +901,7 @@ export default function Home() {
         <LogDialog
           logs={activityLogs}
           onClose={() => setLogOpen(false)}
+          onClear={clearLogs}
         />
       )}
       {activeReminder && (
