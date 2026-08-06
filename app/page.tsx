@@ -32,6 +32,8 @@ export default function Home() {
   const [dialog, setDialog] = useState<{ mode: "create" | "edit"; event: AgendaItem } | null>(null);
   const [backupOpen, setBackupOpen] = useState(false);
   const [reminderOpen, setReminderOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [activeReminder, setActiveReminder] = useState<DueReminder | null>(null);
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | "unsupported">("unsupported");
   const [hydrated, setHydrated] = useState(false);
@@ -117,6 +119,8 @@ export default function Home() {
 
   const calendarYear = currentMonth.getFullYear();
   const calendarMonth = currentMonth.getMonth() + 1;
+  const today = new Date();
+  const todayKey = localDateKey(today.getFullYear(), today.getMonth() + 1, today.getDate());
   const visibleEvents = useMemo(
     () => agenda.flatMap((item) => createRecurringItems(item, calendarYear, calendarMonth)),
     [agenda, calendarMonth, calendarYear]
@@ -142,8 +146,30 @@ export default function Home() {
     },
     [agenda, selectedDate]
   );
-  const today = new Date();
-  const todayKey = localDateKey(today.getFullYear(), today.getMonth() + 1, today.getDate());
+  const searchableEvents = useMemo(() => {
+    const months = new Set<string>();
+    agenda.forEach((item) => months.add(item.date.slice(0, 7)));
+    months.add(todayKey.slice(0, 7));
+    months.add(`${calendarYear}-${String(calendarMonth).padStart(2, "0")}`);
+    return Array.from(months).flatMap((yearMonth) => {
+      const [year, month] = yearMonth.split("-").map(Number);
+      return agenda.flatMap((item) => createRecurringItems(item, year, month));
+    });
+  }, [agenda, calendarMonth, calendarYear, todayKey]);
+  const searchResults = useMemo(() => {
+    const keyword = searchQuery.trim().toLowerCase();
+    if (!keyword) return [];
+    const unique = new Map<string, AgendaItem>();
+    searchableEvents.forEach((event) => {
+      const content = `${event.title} ${event.detail} ${event.date} ${event.time}`.toLowerCase();
+      if (content.includes(keyword)) {
+        unique.set(`${event.id}-${event.date}`, event);
+      }
+    });
+    return Array.from(unique.values())
+      .sort((first, second) => `${first.date}${first.time}`.localeCompare(`${second.date}${second.time}`))
+      .slice(0, 20);
+  }, [searchQuery, searchableEvents]);
   const todayAgenda = useMemo(
     () => agenda
       .flatMap((item) => createRecurringItems(item, today.getFullYear(), today.getMonth() + 1))
@@ -544,6 +570,7 @@ export default function Home() {
             <span>铃</span>
             {notificationPermission !== "granted" && <i />}
           </button>
+          <button className="backup-button" onClick={() => setSearchOpen(true)}>搜索</button>
           <button className="backup-button" onClick={() => setBackupOpen(true)}>备份</button>
           <button className="backup-button" onClick={installApp}>{installPrompt ? "安装" : "安装说明"}</button>
           <button
@@ -791,6 +818,39 @@ export default function Home() {
             <p>如果已经安装过，浏览器就不会再显示安装按钮。</p>
           </div>
           <button onClick={() => setInstallHelpOpen(false)}>知道了</button>
+        </section>
+      )}
+      {searchOpen && (
+        <section className="search-panel" role="dialog" aria-modal="true" aria-label="搜索日程">
+          <header>
+            <strong>搜索日程</strong>
+            <button onClick={() => setSearchOpen(false)} aria-label="关闭搜索">×</button>
+          </header>
+          <input
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            autoFocus
+            placeholder="输入关键词，例如：会议、王总、烧水"
+          />
+          <div className="search-results">
+            {!searchQuery.trim() && <p>输入关键词后，会在本地日程中查找。</p>}
+            {searchQuery.trim() && searchResults.length === 0 && <p>没有找到匹配日程。</p>}
+            {searchResults.map((event) => (
+              <button
+                key={`${event.id}-${event.date}`}
+                onClick={() => {
+                  const [year, month] = event.date.split("-").map(Number);
+                  setCurrentMonth(new Date(year, month - 1, 1));
+                  setSelectedDate(event.date);
+                  setSearchOpen(false);
+                }}
+              >
+                <time>{formatDateTitle(event.date)}<small>{event.time}</small></time>
+                <span><strong>{event.title}</strong><small>{event.detail || statusLabel[event.status]}</small></span>
+                <em className={event.status}>{statusLabel[event.status]}</em>
+              </button>
+            ))}
+          </div>
         </section>
       )}
       {localHelpOpen && (
