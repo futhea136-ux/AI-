@@ -20,6 +20,10 @@ import {
 
 const initialAgenda: AgendaItem[] = [];
 
+type BeforeInstallPromptEvent = Event & {
+  prompt: () => Promise<void>;
+};
+
 export default function Home() {
   const [agenda, setAgenda] = useState<AgendaItem[]>(initialAgenda);
   const [selectedDate, setSelectedDate] = useState("2026-07-29");
@@ -33,7 +37,8 @@ export default function Home() {
   const [hydrated, setHydrated] = useState(false);
   const [listening, setListening] = useState(false);
   const [voiceProcessing, setVoiceProcessing] = useState(false);
-  const [installPrompt, setInstallPrompt] = useState<any>(null);
+  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [installHelpOpen, setInstallHelpOpen] = useState(false);
   const [textVisible, setTextVisible] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [command, setCommand] = useState<ParsedCommand>(() => parseCommand("", new Date(2026, 6, 29)));
@@ -65,7 +70,7 @@ export default function Home() {
   useEffect(() => {
     const handleInstallPrompt = (event: Event) => {
       event.preventDefault();
-      setInstallPrompt(event);
+      setInstallPrompt(event as BeforeInstallPromptEvent);
     };
     window.addEventListener("beforeinstallprompt", handleInstallPrompt);
     window.addEventListener("appinstalled", () => setInstallPrompt(null), { once: true });
@@ -73,7 +78,10 @@ export default function Home() {
   }, []);
 
   async function installApp() {
-    if (!installPrompt) return;
+    if (!installPrompt) {
+      setInstallHelpOpen(true);
+      return;
+    }
     await installPrompt.prompt();
     setInstallPrompt(null);
   }
@@ -508,7 +516,7 @@ export default function Home() {
             {notificationPermission !== "granted" && <i />}
           </button>
           <button className="backup-button" onClick={() => setBackupOpen(true)}>备份</button>
-          {installPrompt && <button className="backup-button" onClick={installApp}>安装</button>}
+          <button className="backup-button" onClick={installApp}>{installPrompt ? "安装" : "安装说明"}</button>
           <button className="avatar" aria-label="本地用户">本地</button>
         </div>
       </header>
@@ -739,6 +747,16 @@ export default function Home() {
           onClose={() => setReminderOpen(false)}
           onRequestPermission={requestNotificationPermission}
         />
+      )}
+      {installHelpOpen && (
+        <section className="install-help" role="dialog" aria-modal="true" aria-label="安装说明">
+          <div>
+            <strong>安装 AI 小秘</strong>
+            <p>Chrome 或 Edge：点地址栏右侧的安装图标，或打开右上角菜单，选择“应用 / 安装此网站”。</p>
+            <p>如果已经安装过，浏览器就不会再显示安装按钮。</p>
+          </div>
+          <button onClick={() => setInstallHelpOpen(false)}>知道了</button>
+        </section>
       )}
       {activeReminder && (
         <section className="reminder-alert" role="alertdialog" aria-modal="true">
