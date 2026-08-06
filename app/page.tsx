@@ -55,6 +55,12 @@ export default function Home() {
     setGreeting(hour < 11 ? "早上好" : hour < 18 ? "下午好" : "晚上好");
   }, []);
 
+  useEffect(() => {
+    if (!hydrated || !("serviceWorker" in navigator)) return;
+    const basePath = window.location.pathname.startsWith("/AI-/") ? "/AI-" : "";
+    navigator.serviceWorker.register(`${basePath}/sw.js`).catch(() => undefined);
+  }, [hydrated]);
+
   const calendarYear = currentMonth.getFullYear();
   const calendarMonth = currentMonth.getMonth() + 1;
   const visibleEvents = useMemo(
