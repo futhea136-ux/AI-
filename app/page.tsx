@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import EventDialog from "./EventDialog";
 import BackupDialog from "./BackupDialog";
 import ReminderPanel from "./ReminderPanel";
+import { cleanupActivityLogs, writeActivityLog } from "./activityLog";
 import { DueReminder, dueReminders, reminderText } from "./reminders";
 import { followUpQuestion, parseCommand, ParsedCommand } from "./assistant";
 import {
@@ -188,6 +189,7 @@ export default function Home() {
         window.localStorage.removeItem("ai-secretary-events");
       }
     }
+    cleanupActivityLogs(window.localStorage);
     const current = new Date();
     const currentKey = localDateKey(current.getFullYear(), current.getMonth() + 1, current.getDate());
     setSelectedDate(currentKey);
@@ -237,6 +239,10 @@ export default function Home() {
   function showToast(message: string) {
     setToast(message);
     window.setTimeout(() => setToast(""), 2200);
+  }
+
+  function logActivity(action: string, title: string) {
+    writeActivityLog(window.localStorage, action, title);
   }
 
   function handleAssistantInput(text: string) {
@@ -305,6 +311,7 @@ export default function Home() {
       setSelectedDate(event.date);
       setAdded(true);
       setAssistantReply("日程已经添加。你还可以继续说话修改它。");
+      logActivity("语音新增", event.title);
       showToast("语音日程已添加");
       return;
     }
@@ -320,6 +327,7 @@ export default function Home() {
     if (command.action === "delete") {
       setAgenda((items) => items.filter((item) => item.id !== sourceId));
       setAssistantReply("日程已经删除。");
+      logActivity("语音删除", target.title);
       showToast("日程已删除");
       return;
     }
@@ -338,6 +346,7 @@ export default function Home() {
       };
     }));
     setAssistantReply(command.action === "complete" ? "已标记完成，日程仍会保留。" : "日程已经修改。");
+    logActivity(command.action === "complete" ? "语音完成" : "语音修改", target.title);
     showToast(command.action === "complete" ? "已标记完成" : "日程已修改");
   }
 
@@ -347,6 +356,7 @@ export default function Home() {
       if (item.id !== targetId) return item;
       const completed = event.status === "completed";
       showToast(completed ? "已恢复为未完成" : "已标记完成，日程会继续保留");
+      logActivity(completed ? "恢复未完成" : "标记完成", event.title);
       return { ...item, status: completed ? "confirmed" : "completed" };
     }));
   }
@@ -395,6 +405,7 @@ export default function Home() {
     });
     setSelectedDate(event.date);
     setDialog(null);
+    logActivity(dialog?.mode === "create" ? "手动新增" : "手动保存", event.title || "未命名日程");
     showToast(dialog?.mode === "create" ? "日程已创建" : "日程已保存");
   }
 
@@ -405,12 +416,14 @@ export default function Home() {
 
     if (deleteAll) {
       setAgenda((items) => items.filter((item) => item.id !== sourceId));
+      logActivity(isSeries ? "删除重复日程" : "删除日程", event.title);
       showToast(isSeries ? "全部重复日程已删除" : "日程已删除");
     } else {
       setAgenda((items) => items.map((item) => item.id === sourceId
         ? { ...item, excludedDates: Array.from(new Set([...(item.excludedDates || []), event.date])) }
         : item
       ));
+      logActivity("删除单次日程", event.title);
       showToast("仅本次日程已删除");
     }
     setDialog(null);
@@ -420,6 +433,7 @@ export default function Home() {
     if (!window.confirm(`备份中有 ${events.length} 条日程，将替换当前浏览器中的全部日程。确定继续吗？`)) return;
     setAgenda(events);
     setBackupOpen(false);
+    logActivity("恢复备份", `${events.length} 条日程`);
     showToast("备份恢复完成");
   }
 
@@ -430,6 +444,7 @@ export default function Home() {
     }
     const permission = await Notification.requestPermission();
     setNotificationPermission(permission);
+    logActivity("通知权限", permission === "granted" ? "已开启" : "未开启");
     showToast(permission === "granted" ? "浏览器通知已开启" : "未开启浏览器通知，页面内提醒仍有效");
   }
 
@@ -858,6 +873,7 @@ export default function Home() {
           <div>
             <strong>{online ? "本机保存中" : "离线可用中"}</strong>
             <p>日程保存在当前浏览器本机，不需要数据库，也不会自动上传。</p>
+            <p>操作日志也只保存在本机，并会自动清理 7 天前的记录。</p>
             <p>{online ? "当前网络正常；断网后已缓存页面仍可打开。" : "当前离线；可以查看和编辑本地日程，语音识别可能受浏览器限制。"}</p>
           </div>
           <button onClick={() => setLocalHelpOpen(false)}>知道了</button>
