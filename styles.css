@@ -84,6 +84,15 @@ button { color: inherit; }
   color: white; background: var(--primary-strong); cursor: pointer;
   font-size: 10px;
 }
+.local-status {
+  position: relative;
+}
+.local-status::after {
+  content: ""; position: absolute; top: 5px; right: 5px; width: 6px; height: 6px;
+  border: 1px solid white; border-radius: 50%; background: #52c477;
+}
+.local-status.offline { background: #8a5a22; }
+.local-status.offline::after { background: #f4b44d; }
 .topbar-actions { display: flex; align-items: center; gap: 8px; }
 .backup-button {
   height: 36px; padding: 0 13px; border: 1px solid var(--line); border-radius: 11px;
@@ -524,7 +533,7 @@ body[data-theme="fusion"] .toast { background: linear-gradient(135deg, #6655dd, 
     height: auto; margin: 0; padding: 12px 14px; border-width: 0 0 1px;
     border-radius: 0; flex-wrap: wrap; gap: 10px;
   }
-  .brand small, .avatar { display: none; }
+  .brand small { display: none; }
   .theme-switcher { order: 2; width: 100%; }
   .theme-button { flex: 1; padding: 8px 4px; }
   .theme-button span { display: none; }
@@ -533,6 +542,7 @@ body[data-theme="fusion"] .toast { background: linear-gradient(135deg, #6655dd, 
   .mode-spark { width: 25px; height: 25px; }
   .topbar-actions { margin-left: auto; }
   .backup-button { height: 32px; padding: 0 10px; }
+  .avatar { min-width: 34px; height: 34px; padding: 0 8px; }
   .reminder-button { width: 32px; height: 32px; }
   .install-help { right: 14px; bottom: 14px; left: 14px; width: auto; }
   .update-notice { right: 14px; bottom: 14px; left: 14px; width: auto; }

@@ -40,6 +40,8 @@ export default function Home() {
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [installHelpOpen, setInstallHelpOpen] = useState(false);
   const [updateReady, setUpdateReady] = useState(false);
+  const [localHelpOpen, setLocalHelpOpen] = useState(false);
+  const [online, setOnline] = useState(true);
   const [textVisible, setTextVisible] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [command, setCommand] = useState<ParsedCommand>(() => parseCommand("", new Date(2026, 6, 29)));
@@ -60,6 +62,18 @@ export default function Home() {
   useEffect(() => {
     const hour = new Date().getHours();
     setGreeting(hour < 11 ? "早上好" : hour < 18 ? "下午好" : "晚上好");
+    setOnline(navigator.onLine);
+  }, []);
+
+  useEffect(() => {
+    const handleOnline = () => setOnline(true);
+    const handleOffline = () => setOnline(false);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
   }, []);
 
   useEffect(() => {
@@ -532,7 +546,13 @@ export default function Home() {
           </button>
           <button className="backup-button" onClick={() => setBackupOpen(true)}>备份</button>
           <button className="backup-button" onClick={installApp}>{installPrompt ? "安装" : "安装说明"}</button>
-          <button className="avatar" aria-label="本地用户">本地</button>
+          <button
+            className={`avatar local-status ${online ? "online" : "offline"}`}
+            aria-label="本地数据状态"
+            onClick={() => setLocalHelpOpen(true)}
+          >
+            {online ? "本地" : "离线"}
+          </button>
         </div>
       </header>
 
@@ -771,6 +791,16 @@ export default function Home() {
             <p>如果已经安装过，浏览器就不会再显示安装按钮。</p>
           </div>
           <button onClick={() => setInstallHelpOpen(false)}>知道了</button>
+        </section>
+      )}
+      {localHelpOpen && (
+        <section className="install-help" role="dialog" aria-modal="true" aria-label="本地数据说明">
+          <div>
+            <strong>{online ? "本机保存中" : "离线可用中"}</strong>
+            <p>日程保存在当前浏览器本机，不需要数据库，也不会自动上传。</p>
+            <p>{online ? "当前网络正常；断网后已缓存页面仍可打开。" : "当前离线；可以查看和编辑本地日程，语音识别可能受浏览器限制。"}</p>
+          </div>
+          <button onClick={() => setLocalHelpOpen(false)}>知道了</button>
         </section>
       )}
       {activeReminder && (
