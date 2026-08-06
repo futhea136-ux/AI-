@@ -18,14 +18,7 @@ import {
   weekdayLabel
 } from "./schedule";
 
-const initialAgenda: AgendaItem[] = [
-  { id: "event-1", date: "2026-07-29", time: "09:30", title: "项目例会", detail: "会议室 B · 6人", reminder: "15m", status: "completed", repeat: "none" },
-  { id: "event-2", date: "2026-07-29", time: "15:00", title: "客户沟通", detail: "腾讯会议", reminder: "15m", status: "confirmed", repeat: "none" },
-  { id: "event-3", date: "2026-07-29", time: "待定", title: "产品方案讨论", detail: "时间和地点尚未确定", reminder: "none", status: "tentative", repeat: "none" },
-  { id: "event-4", date: "2026-07-10", time: "待定", title: "方案讨论", detail: "时间待确认", reminder: "none", status: "tentative", repeat: "none" },
-  { id: "event-5", date: "2026-07-15", time: "09:30", title: "周例会", detail: "线上会议", reminder: "15m", status: "confirmed", repeat: "weekly" }
-];
-const assistantReferenceDate = new Date(2026, 6, 29);
+const initialAgenda: AgendaItem[] = [];
 
 export default function Home() {
   const [agenda, setAgenda] = useState<AgendaItem[]>(initialAgenda);
@@ -41,8 +34,9 @@ export default function Home() {
   const [listening, setListening] = useState(false);
   const [voiceProcessing, setVoiceProcessing] = useState(false);
   const [textVisible, setTextVisible] = useState(false);
-  const [transcript, setTranscript] = useState("明天下午3点提醒我见王总");
-  const [command, setCommand] = useState<ParsedCommand>(() => parseCommand("明天下午3点提醒我见王总", assistantReferenceDate));
+  const [transcript, setTranscript] = useState("");
+  const [command, setCommand] = useState<ParsedCommand>(() => parseCommand("", new Date(2026, 6, 29)));
+  const [hasCommand, setHasCommand] = useState(false);
   const [assistantReply, setAssistantReply] = useState("想安排什么？你可以直接告诉我。");
   const [pendingText, setPendingText] = useState("");
   const [toast, setToast] = useState("");
@@ -90,6 +84,13 @@ export default function Home() {
   );
   const today = new Date();
   const todayKey = localDateKey(today.getFullYear(), today.getMonth() + 1, today.getDate());
+  const todayAgenda = useMemo(
+    () => agenda
+      .flatMap((item) => createRecurringItems(item, today.getFullYear(), today.getMonth() + 1))
+      .filter((item) => item.date === todayKey),
+    [agenda, todayKey]
+  );
+  const tentativeTodayCount = todayAgenda.filter((item) => item.status === "tentative").length;
   const completedCount = selectedAgenda.filter((item) => item.status === "completed").length;
 
   useEffect(() => {
@@ -101,6 +102,10 @@ export default function Home() {
         window.localStorage.removeItem("ai-secretary-events");
       }
     }
+    const current = new Date();
+    const currentKey = localDateKey(current.getFullYear(), current.getMonth() + 1, current.getDate());
+    setSelectedDate(currentKey);
+    setCurrentMonth(new Date(current.getFullYear(), current.getMonth(), 1));
     setHydrated(true);
     setNotificationPermission("Notification" in window ? Notification.permission : "unsupported");
   }, []);
@@ -155,6 +160,7 @@ export default function Home() {
     const question = followUpQuestion(parsed);
     setTranscript(text);
     setCommand(parsed);
+    setHasCommand(true);
 
     if (question) {
       setPendingText(combined);
@@ -490,7 +496,7 @@ export default function Home() {
             <div>
               <p className="eyebrow">AI ASSISTANT</p>
               <h1>{greeting}，有什么可以帮你？</h1>
-              <p>今天有 3 项安排，1 项待确认。</p>
+              <p>今天有 {todayAgenda.length} 项安排，{tentativeTodayCount} 项待确认。</p>
             </div>
           </div>
 
@@ -498,8 +504,8 @@ export default function Home() {
             <div className="message assistant-message">
               <span className="message-dot" /><p>{assistantReply}</p>
             </div>
-            <div className="message user-message"><p>{transcript}</p></div>
-            {!listening && !voiceProcessing && command.missingFields.length > 0 && (
+            {transcript && <div className="message user-message"><p>{transcript}</p></div>}
+            {hasCommand && !listening && !voiceProcessing && command.missingFields.length > 0 && (
               <div className="command-missing-note" role="status">
                 <strong>还不能确认</strong>
                 <p>
@@ -509,7 +515,7 @@ export default function Home() {
                 </p>
               </div>
             )}
-            {!listening && !voiceProcessing && command.action !== "query" && command.missingFields.length === 0 && (
+            {hasCommand && !listening && !voiceProcessing && command.action !== "query" && command.missingFields.length === 0 && (
             <div className="event-confirmation">
               <div className="confirmation-top">
                 <span className="success-icon">✓</span>
