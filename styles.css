@@ -401,6 +401,19 @@ body.listening .waveform i:nth-child(3n) { animation-delay: -.55s; }
   padding: 8px 11px; border: 0; border-radius: 9px;
   color: white; background: var(--primary); cursor: pointer; font-size: 10px;
 }
+.update-notice {
+  position: fixed; right: 22px; bottom: 22px; z-index: 36; width: min(360px, calc(100vw - 28px));
+  display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 14px;
+  padding: 16px; border: 1px solid #c9d7ff; border-radius: 15px;
+  color: #f7f8ff; background: linear-gradient(145deg, #192442, #2563eb);
+  box-shadow: 0 20px 55px rgba(30, 64, 175, .28);
+}
+.update-notice strong { display: block; margin-bottom: 5px; font-size: 12px; }
+.update-notice p { margin: 0; color: #dbe6ff; font-size: 10px; line-height: 1.6; }
+.update-notice button {
+  padding: 8px 12px; border: 1px solid rgba(255,255,255,.34); border-radius: 9px;
+  color: white; background: rgba(255,255,255,.12); cursor: pointer; font-size: 10px;
+}
 .toast {
   position: fixed; left: 50%; bottom: 25px; z-index: 10;
   padding: 11px 18px; border-radius: 10px; color: white; background: #222b26;
@@ -522,6 +535,7 @@ body[data-theme="fusion"] .toast { background: linear-gradient(135deg, #6655dd, 
   .backup-button { height: 32px; padding: 0 10px; }
   .reminder-button { width: 32px; height: 32px; }
   .install-help { right: 14px; bottom: 14px; left: 14px; width: auto; }
+  .update-notice { right: 14px; bottom: 14px; left: 14px; width: auto; }
   .permission-card { grid-template-columns: 34px 1fr; }
   .permission-card button { grid-column: 1 / -1; }
   .upcoming-section li { grid-template-columns: 76px 1fr auto; }

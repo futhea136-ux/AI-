@@ -39,6 +39,7 @@ export default function Home() {
   const [voiceProcessing, setVoiceProcessing] = useState(false);
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [installHelpOpen, setInstallHelpOpen] = useState(false);
+  const [updateReady, setUpdateReady] = useState(false);
   const [textVisible, setTextVisible] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [command, setCommand] = useState<ParsedCommand>(() => parseCommand("", new Date(2026, 6, 29)));
@@ -64,7 +65,21 @@ export default function Home() {
   useEffect(() => {
     if (!hydrated || !("serviceWorker" in navigator)) return;
     const basePath = window.location.pathname.startsWith("/AI-/") ? "/AI-" : "";
-    navigator.serviceWorker.register(`${basePath}/sw.js`).catch(() => undefined);
+    navigator.serviceWorker.register(`${basePath}/sw.js`).then((registration) => {
+      registration.addEventListener("updatefound", () => {
+        const worker = registration.installing;
+        if (!worker) return;
+        worker.addEventListener("statechange", () => {
+          if (worker.state === "installed" && navigator.serviceWorker.controller) {
+            setUpdateReady(true);
+          }
+        });
+      });
+    }).catch(() => undefined);
+
+    const handleControllerChange = () => setUpdateReady(true);
+    navigator.serviceWorker.addEventListener("controllerchange", handleControllerChange);
+    return () => navigator.serviceWorker.removeEventListener("controllerchange", handleControllerChange);
   }, [hydrated]);
 
   useEffect(() => {
@@ -767,6 +782,15 @@ export default function Home() {
             <p>{activeReminder.event.time} · {activeReminder.event.detail || "日程即将开始"}</p>
           </div>
           <button onClick={() => setActiveReminder(null)}>知道了</button>
+        </section>
+      )}
+      {updateReady && (
+        <section className="update-notice" role="status">
+          <div>
+            <strong>发现新版本</strong>
+            <p>刷新后即可使用最新功能，已保存的日程不会丢失。</p>
+          </div>
+          <button onClick={() => window.location.reload()}>刷新</button>
         </section>
       )}
       <div className={`toast${toast ? " visible" : ""}`} role="status">{toast}</div>
