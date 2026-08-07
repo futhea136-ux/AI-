@@ -5,6 +5,7 @@ import EventDialog from "./EventDialog";
 import BackupDialog from "./BackupDialog";
 import ReminderPanel from "./ReminderPanel";
 import LogDialog from "./LogDialog";
+import HelpDialog from "./HelpDialog";
 import { ActivityLogEntry, cleanupActivityLogs, clearActivityLogs, writeActivityLog } from "./activityLog";
 import { DueReminder, dueReminders, reminderText } from "./reminders";
 import { followUpQuestion, parseCommand, ParsedCommand } from "./assistant";
@@ -34,6 +35,7 @@ export default function Home() {
   const [dialog, setDialog] = useState<{ mode: "create" | "edit"; event: AgendaItem } | null>(null);
   const [backupOpen, setBackupOpen] = useState(false);
   const [reminderOpen, setReminderOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeReminder, setActiveReminder] = useState<DueReminder | null>(null);
@@ -600,6 +602,7 @@ export default function Home() {
             <span>铃</span>
             {notificationPermission !== "granted" && <i />}
           </button>
+          <button className="backup-button" onClick={() => setHelpOpen(true)}>说明</button>
           <button className="backup-button" onClick={() => setSearchOpen(true)}>搜索</button>
           <button className="backup-button" onClick={() => setBackupOpen(true)}>备份</button>
           <button className="backup-button" onClick={installApp}>{installPrompt ? "安装" : "安装说明"}</button>
@@ -839,6 +842,9 @@ export default function Home() {
           onClose={() => setReminderOpen(false)}
           onRequestPermission={requestNotificationPermission}
         />
+      )}
+      {helpOpen && (
+        <HelpDialog onClose={() => setHelpOpen(false)} />
       )}
       {installHelpOpen && (
         <section className="install-help" role="dialog" aria-modal="true" aria-label="安装说明">

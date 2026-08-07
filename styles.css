@@ -331,6 +331,15 @@ body.listening .waveform i:nth-child(3n) { animation-delay: -.55s; }
   color: #7d622c; background: #fff7e7; font-size: 10px; line-height: 1.65;
 }
 .log-dialog { width: min(560px, 100%); }
+.help-dialog { width: min(620px, 100%); }
+.help-block {
+  padding: 14px; border: 1px solid var(--line); border-radius: 13px;
+  background: color-mix(in srgb, var(--primary-soft) 34%, transparent);
+  margin-bottom: 10px;
+}
+.help-block h3 { margin: 0 0 6px; font-size: 12px; }
+.help-block p { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.7; }
+.help-block ol { margin: 0; padding-left: 18px; color: var(--muted); font-size: 10px; line-height: 1.8; }
 .log-toolbar {
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
   margin: -4px 0 12px;
