@@ -1,0 +1,7 @@
+interface:
+  display_name: "AI 小秘原型"
+  short_description: "维护、验收并打包 AI 小秘免费静态原型"
+  default_prompt: "Use $ai-secretary-prototype to maintain, verify, package, or hand off the AI 小秘 free static prototype."
+
+policy:
+  allow_implicit_invocation: true
